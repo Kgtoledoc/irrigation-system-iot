@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Riego Inteligente - Raspberry Pi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-online { background-color: #48bb78; }
+        .status-offline { background-color: #f56565; }
+        .status-warning { background-color: #ed8936; }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .sensor-item {
+            text-align: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .sensor-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .sensor-label {
+            font-size: 0.9rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .config-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .history-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .history-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: #22543d;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #742a2a;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border: 1px solid #fbd38d;
+            color: #744210;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sensor-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .control-buttons {
+                flex-direction: column;
+            }
+
+            .config-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-seedling"></i> Sistema de Riego Inteligente</h1>
+            <p>Controlado por Raspberry Pi con Energía Solar</p>
+        </div>
+
+        <div id="alerts"></div>
+
+        <div class="dashboard-grid">
+            <!-- Estado del Sistema -->
+            <div class="card">
+                <h2>
+                    <i class="fas fa-info-circle"></i>
+                    Estado del Sistema
+                    <span id="systemStatus" class="status-indicator status-offline"></span>
+                </h2>
+                <div id="systemInfo">
+                    <div class="loading"></div> Cargando...
+                </div>
+            </div>
+
+            <!-- Sensores -->
+            <div class="card">
+                <h2><i class="fas fa-thermometer-half"></i> Sensores</h2>
+                <div class="sensor-grid" id="sensorGrid">
+                    <div class="sensor-item">
+                        <div class="sensor-value" id="soilMoisture">--</div>
+                        <div class="sensor-label">Humedad Suelo</div>
+                    </div>
+                    <div class="sensor-item">
+                        <div class="sensor-value" id="temperature">--</div>
+                        <div class="sensor-label">Temperatura</div>
+                    </div>
+                    <div class="sensor-item">
+                        <div class="sensor-value" id="humidity">--</div>
+                        <div class="sensor-label">Humedad Aire</div>
+                    </div>
+                    <div class="sensor-item">
+                        <div class="sensor-value" id="batteryVoltage">--</div>
+                        <div class="sensor-label">Batería</div>
+                    </div>
+                    <div class="sensor-item">
+                        <div class="sensor-value" id="solarVoltage">--</div>
+                        <div class="sensor-label">Panel Solar</div>
+                    </div>
+                    <div class="sensor-item">
+                        <div class="sensor-value" id="lightLevel">--</div>
+                        <div class="sensor-label">Nivel Luz</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Manual -->
+            <div class="card">
+                <h2><i class="fas fa-gamepad"></i> Control Manual</h2>
+                <div class="control-buttons">
+                    <button id="startBtn" class="btn btn-primary" onclick="startWatering()">
+                        <i class="fas fa-play"></i> Iniciar Riego
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" onclick="stopWatering()" disabled>
+                        <i class="fas fa-stop"></i> Detener Riego
+                    </button>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <button id="manualBtn" class="btn btn-primary" onclick="manualWatering()">
+                        <i class="fas fa-hand-paper"></i> Botón Manual
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuración -->
+            <div class="card">
+                <h2><i class="fas fa-cog"></i> Configuración</h2>
+                <form id="configForm" class="config-form">
+                    <div class="form-group">
+                        <label>Humedad Mínima (%)</label>
+                        <input type="number" id="minHumidity" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Humedad Máxima (%)</label>
+                        <input type="number" id="maxHumidity" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duración Riego (seg)</label>
+                        <input type="number" id="wateringDuration" min="5" max="300" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Intervalo Verificación (seg)</label>
+                        <input type="number" id="checkInterval" min="60" max="3600" required>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="autoMode">
+                            <label for="autoMode">Modo Automático</label>
+                        </div>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="card">
+            <h2><i class="fas fa-chart-line"></i> Historial de Humedad</h2>
+            <div class="chart-container">
+                <canvas id="humidityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="card">
+            <h2><i class="fas fa-history"></i> Historial de Riego</h2>
+            <table class="history-table" id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Duración</th>
+                        <th>Agua</th>
+                        <th>Humedad Antes</th>
+                        <th>Humedad Después</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center;">Cargando historial...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Conectar WebSocket
+        const socket = io();
+        let humidityChart;
+
+        // Inicializar gráfico
+        function initChart() {
+            const ctx = document.getElementById('humidityChart').getContext('2d');
+            humidityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Humedad del Suelo (%)',
+                        data: [],
+                        borderColor: '#48bb78',
+                        backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar datos de sensores
+        function updateSensorData(data) {
+            document.getElementById('soilMoisture').textContent = data.soil_moisture.toFixed(1) + '%';
+            document.getElementById('temperature').textContent = data.temperature.toFixed(1) + '°C';
+            document.getElementById('humidity').textContent = data.humidity.toFixed(1) + '%';
+            document.getElementById('batteryVoltage').textContent = data.battery_voltage.toFixed(1) + 'V';
+            document.getElementById('solarVoltage').textContent = data.solar_voltage.toFixed(1) + 'V';
+            document.getElementById('lightLevel').textContent = data.light_level;
+
+            // Actualizar gráfico
+            const now = new Date().toLocaleTimeString();
+            humidityChart.data.labels.push(now);
+            humidityChart.data.datasets[0].data.push(data.soil_moisture);
+
+            // Mantener solo los últimos 20 puntos
+            if (humidityChart.data.labels.length > 20) {
+                humidityChart.data.labels.shift();
+                humidityChart.data.datasets[0].data.shift();
+            }
+
+            humidityChart.update();
+        }
+
+        // Actualizar estado del sistema
+        function updateSystemStatus(data) {
+            const statusIndicator = document.getElementById('systemStatus');
+            const systemInfo = document.getElementById('systemInfo');
+
+            if (data.system_enabled) {
+                statusIndicator.className = 'status-indicator status-online';
+            } else {
+                statusIndicator.className = 'status-indicator status-warning';
+            }
+
+            systemInfo.innerHTML = `
+                <div style="margin-bottom: 10px;">
+                    <strong>Riego:</strong> ${data.is_watering ? '💧 ACTIVO' : '⏸️ INACTIVO'}
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Modo Automático:</strong> ${data.config.auto_mode ? 'ON' : 'OFF'}
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong>Uptime:</strong> ${data.is_watering ? Math.floor(data.uptime) + 's' : '0s'}
+                </div>
+            `;
+
+            // Actualizar botones
+            document.getElementById('startBtn').disabled = data.is_watering;
+            document.getElementById('stopBtn').disabled = !data.is_watering;
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type = 'success') {
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'exclamation-triangle'}"></i>
+                ${message}
+            `;
+            alertsDiv.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Funciones de control
+        async function startWatering() {
+            try {
+                const response = await fetch('/api/start_watering', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                showAlert(data.message, data.status);
+            } catch (error) {
+                showAlert('Error al iniciar riego', 'error');
+            }
+        }
+
+        async function stopWatering() {
+            try {
+                const response = await fetch('/api/stop_watering', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                showAlert(data.message, data.status);
+            } catch (error) {
+                showAlert('Error al detener riego', 'error');
+            }
+        }
+
+        async function manualWatering() {
+            try {
+                const response = await fetch('/api/start_watering', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                showAlert('Botón manual presionado - ' + data.message, data.status);
+            } catch (error) {
+                showAlert('Error al activar botón manual', 'error');
+            }
+        }
+
+        // Cargar configuración
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                document.getElementById('minHumidity').value = config.min_humidity;
+                document.getElementById('maxHumidity').value = config.max_humidity;
+                document.getElementById('wateringDuration').value = config.watering_duration;
+                document.getElementById('checkInterval').value = config.check_interval;
+                document.getElementById('autoMode').checked = config.auto_mode;
+            } catch (error) {
+                showAlert('Error al cargar configuración', 'error');
+            }
+        }
+
+        // Guardar configuración
+        document.getElementById('configForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const config = {
+                min_humidity: parseInt(document.getElementById('minHumidity').value),
+                max_humidity: parseInt(document.getElementById('maxHumidity').value),
+                watering_duration: parseInt(document.getElementById('wateringDuration').value),
+                check_interval: parseInt(document.getElementById('checkInterval').value),
+                auto_mode: document.getElementById('autoMode').checked
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                const data = await response.json();
+                showAlert(data.message, data.status);
+            } catch (error) {
+                showAlert('Error al guardar configuración', 'error');
+            }
+        });
+
+        // Cargar historial
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/history?limit=20');
+                const history = await response.json();
+                
+                const tbody = document.getElementById('historyBody');
+                tbody.innerHTML = '';
+                
+                history.forEach(record => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(record.timestamp).toLocaleString()}</td>
+                        <td>${record.irrigation_type}</td>
+                        <td>${record.duration}s</td>
+                        <td>${record.water_volume.toFixed(1)}L</td>
+                        <td>${record.humidity_before}%</td>
+                        <td>${record.humidity_after}%</td>
+                        <td>${record.status}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                showAlert('Error al cargar historial', 'error');
+            }
+        }
+
+        // Eventos WebSocket
+        socket.on('connect', function() {
+            showAlert('Conectado al sistema', 'success');
+            loadConfig();
+            loadHistory();
+        });
+
+        socket.on('disconnect', function() {
+            showAlert('Desconectado del sistema', 'warning');
+        });
+
+        socket.on('sensor_data', function(data) {
+            updateSensorData(data);
+        });
+
+        socket.on('watering_status', function(data) {
+            if (data.status === 'started') {
+                showAlert(`Riego iniciado (${data.type})`, 'success');
+            } else {
+                showAlert(`Riego detenido - Duración: ${data.duration}s`, 'success');
+            }
+        });
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            
+            // Cargar estado inicial
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateSystemStatus(data);
+                    updateSensorData(data.sensor_data);
+                })
+                .catch(error => {
+                    showAlert('Error al cargar estado inicial', 'error');
+                });
+        });
+    </script>
+</body>
+</html> 

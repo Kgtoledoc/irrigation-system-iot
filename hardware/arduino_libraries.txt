@@ -1,0 +1,183 @@
+# Librerías Requeridas para Arduino
+
+## 📚 **Librerías Principales**
+
+### **Para Arduino Nano/Uno**
+```
+RTClib by Adafruit
+- Descripción: Para el módulo RTC DS3231
+- Instalación: Arduino IDE → Herramientas → Administrar Bibliotecas → Buscar "RTClib"
+- Versión: 2.1.1 o superior
+
+LiquidCrystal_I2C by Frank de Brabander
+- Descripción: Para display LCD 16x2 con I2C
+- Instalación: Arduino IDE → Herramientas → Administrar Bibliotecas → Buscar "LiquidCrystal I2C"
+- Versión: 1.1.4 o superior
+
+Wire (incluida)
+- Descripción: Comunicación I2C
+- Instalación: Incluida en Arduino IDE
+
+EEPROM (incluida)
+- Descripción: Almacenamiento persistente
+- Instalación: Incluida en Arduino IDE
+```
+
+### **Para ESP32**
+```
+WiFi (incluida)
+- Descripción: Conectividad WiFi
+- Instalación: Incluida en ESP32 core
+
+WebServer (incluida)
+- Descripción: Servidor web integrado
+- Instalación: Incluida en ESP32 core
+
+ArduinoJson by Benoit Blanchon
+- Descripción: Manejo de JSON para API
+- Instalación: Arduino IDE → Herramientas → Administrar Bibliotecas → Buscar "ArduinoJson"
+- Versión: 6.21.3 o superior
+
+SPIFFS (incluida)
+- Descripción: Sistema de archivos en memoria flash
+- Instalación: Incluida en ESP32 core
+
+RTClib by Adafruit
+- Descripción: Para el módulo RTC DS3231
+- Instalación: Arduino IDE → Herramientas → Administrar Bibliotecas → Buscar "RTClib"
+- Versión: 2.1.1 o superior
+
+LiquidCrystal_I2C by Frank de Brabander
+- Descripción: Para display LCD 16x2 con I2C
+- Instalación: Arduino IDE → Herramientas → Administrar Bibliotecas → Buscar "LiquidCrystal I2C"
+- Versión: 1.1.4 o superior
+
+Wire (incluida)
+- Descripción: Comunicación I2C
+- Instalación: Incluida en ESP32 core
+```
+
+## 🔧 **Instalación de Librerías**
+
+### **Método 1: Arduino IDE**
+1. Abrir Arduino IDE
+2. Ir a **Herramientas** → **Administrar Bibliotecas**
+3. Buscar cada librería por nombre
+4. Hacer clic en **Instalar**
+
+### **Método 2: Descarga Manual**
+1. Descargar librería desde GitHub
+2. Extraer archivo ZIP
+3. Copiar carpeta a `Documentos/Arduino/libraries/`
+4. Reiniciar Arduino IDE
+
+### **Método 3: Gestor de Paquetes**
+```bash
+# Para usuarios avanzados con PlatformIO
+pio lib install "RTClib"
+pio lib install "LiquidCrystal_I2C"
+pio lib install "ArduinoJson"
+```
+
+## 📋 **Verificación de Instalación**
+
+### **Para Arduino**
+```cpp
+#include <RTClib.h>
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <EEPROM.h>
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("✅ Todas las librerías cargadas correctamente");
+}
+```
+
+### **Para ESP32**
+```cpp
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <SPIFFS.h>
+#include <Wire.h>
+#include <RTClib.h>
+#include <LiquidCrystal_I2C.h>
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("✅ Todas las librerías cargadas correctamente");
+}
+```
+
+## ⚠️ **Problemas Comunes**
+
+### **Error: "No such file or directory"**
+- Verificar que la librería esté instalada
+- Reiniciar Arduino IDE
+- Verificar versión de la librería
+
+### **Error: "Multiple libraries were found"**
+- Desinstalar versiones duplicadas
+- Mantener solo la versión más reciente
+
+### **Error: "Incompatible library"**
+- Verificar compatibilidad con tu placa
+- Actualizar Arduino IDE
+- Usar versión compatible de la librería
+
+## 🎯 **Configuración de Placa**
+
+### **Arduino Nano/Uno**
+```
+Placa: Arduino Nano
+Procesador: ATmega328P (Old Bootloader)
+Puerto: COM3 (o el que corresponda)
+```
+
+### **ESP32**
+```
+Placa: ESP32 Dev Module
+Upload Speed: 115200
+CPU Frequency: 240MHz
+Flash Frequency: 80MHz
+Flash Mode: QIO
+Flash Size: 4MB
+Partition Scheme: Default 4MB with spiffs
+```
+
+## 📦 **Librerías Opcionales**
+
+### **Para Funcionalidades Adicionales**
+```
+DHT sensor library by Adafruit
+- Para sensores de temperatura y humedad DHT11/DHT22
+
+Adafruit Unified Sensor
+- Librería base para sensores Adafruit
+
+OneWire by Paul Stoffregen
+- Para sensores DS18B20
+
+BH1750 by Christopher Laws
+- Para sensor de luz BH1750
+
+PubSubClient by Nick O'Leary
+- Para comunicación MQTT (IoT)
+
+WiFiManager by tzapu
+- Para configuración WiFi fácil
+```
+
+## 🔄 **Actualización de Librerías**
+
+### **Recomendaciones**
+- Mantener librerías actualizadas
+- Verificar compatibilidad antes de actualizar
+- Hacer backup del código antes de actualizar
+- Probar funcionamiento después de actualizar
+
+### **Frecuencia de Actualización**
+- **Críticas**: Actualizar inmediatamente
+- **Importantes**: Actualizar mensualmente
+- **Menores**: Actualizar trimestralmente 

@@ -1,0 +1,55 @@
+# Sistema de Riego Inteligente - Raspberry Pi
+# Requisitos de Python
+
+# Framework web
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+python-socketio==5.8.0
+
+# Control de GPIO
+RPi.GPIO==0.7.1
+
+# Sensores y ADC
+Adafruit-ADS1x15==1.0.2
+smbus2==0.4.3
+bme280==0.1.0
+
+# Base de datos
+sqlite3  # Incluido en Python
+
+# Utilidades
+python-dateutil==2.8.2
+requests==2.31.0
+
+# Logging y monitoreo
+psutil==5.9.5
+
+# Desarrollo (opcional)
+# pytest==7.4.2
+# black==23.7.0
+# flake8==6.0.0
+
+# Notas de instalación:
+# 
+# 1. Instalar dependencias del sistema:
+#    sudo apt-get update
+#    sudo apt-get install python3-pip python3-dev
+#    sudo apt-get install i2c-tools python3-smbus
+#    sudo apt-get install libgpiod-dev
+#
+# 2. Habilitar I2C:
+#    sudo raspi-config
+#    -> Interface Options -> I2C -> Enable
+#
+# 3. Instalar paquetes Python:
+#    pip3 install -r requirements_raspberry_pi.txt
+#
+# 4. Verificar I2C:
+#    sudo i2cdetect -y 1
+#
+# 5. Configurar permisos GPIO:
+#    sudo usermod -a -G gpio $USER
+#    sudo usermod -a -G i2c $USER
+#
+# 6. Reiniciar para aplicar cambios:
+#    sudo reboot 
